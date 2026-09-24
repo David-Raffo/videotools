@@ -1,4 +1,4 @@
-FROM python:3.13-slim
+FROM python:3.14-slim
 
 RUN apt-get update \
  && apt-get install -y --no-install-recommends ffmpeg mesa-va-drivers vainfo fontconfig fonts-dejavu-core fonts-liberation2 fonts-noto-core fonts-noto-cjk \
