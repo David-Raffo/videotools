@@ -1,0 +1,7 @@
+services:
+  videotools:
+    group_add:
+      - "${RENDER_GID:-993}"
+      - "${VIDEO_GID:-44}"
+    devices:
+      - /dev/dri:/dev/dri

@@ -1,0 +1,16 @@
+[project]
+name = "videotools"
+version = "1.0.0"
+description = "Self-hosted, browser-based video editor powered by FFmpeg"
+readme = "README.md"
+license = "MIT"
+authors = [{ name = "David Raffo" }]
+requires-python = ">=3.13"
+
+[tool.ruff]
+line-length = 120
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "W"]
+ignore = ["E501", "E741"]

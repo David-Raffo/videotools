@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Video Tools</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231d6f8f'/%3E%3Cpath d='M12 9l11 7-11 7z' fill='white'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="login" class="login hidden">
+  <form id="loginForm" class="login-card">
+    <div class="brand"><span class="logo"></span><b>Video Tools</b></div>
+    <label>Contraseña<input type="password" id="loginPass" autocomplete="current-password" autofocus></label>
+    <button class="btn primary" type="submit">Entrar</button>
+    <div id="loginErr" class="err"></div>
+  </form>
+</div>
+
+<header class="top">
+  <div class="top-left">
+    <a class="brand" href="#/"><span class="logo"></span><b class="brand-name">Video Tools</b></a>
+    <div class="proj-head hidden" id="projHead">
+      <a class="btn ghost sm" href="#/" title="Volver a proyectos">← Proyectos</a>
+      <input type="text" id="projName" class="proj-name" title="Nombre del proyecto" maxlength="120">
+      <span class="muted small save-state" id="saveState"></span>
+    </div>
+  </div>
+  <div class="top-actions">
+    <button class="btn primary sm" id="droneBtn" title="Sube uno o varios vídeos, recórtalos y se renderizan con la configuración de dron">Edición rápida dron</button>
+    <button class="btn ghost hidden" id="jobsBtn">Renders <span class="badge hidden" id="jobsBadge">0</span></button>
+  </div>
+</header>
+
+<main class="wrap">
+  <div id="homeView" class="hidden">
+    <section class="card source">
+      <div class="card-head"><div><h2>Nuevo proyecto</h2><div class="muted small">Sube un vídeo y empieza a editar; todo se guarda solo</div></div></div>
+      <div class="drop" id="drop">
+        <div class="drop-icon"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M12 16V4m0 0l-4 4m4-4l4 4M4 17v2a1 1 0 001 1h14a1 1 0 001-1v-2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="drop-text"><b>Suelta un vídeo aquí</b><span class="muted small">MP4, MOV, MKV, WebM, AVI… · se procesa en el servidor</span></div>
+        <div class="drop-actions">
+          <button class="btn soft hidden" id="libBtn">Explorar servidor</button>
+          <label class="btn soft">Elegir archivo<input type="file" id="fileInput" accept="video/*,.mkv,.mts,.m2ts,.avi,.mxf,.lrv" hidden></label>
+        </div>
+      </div>
+      <div id="uploads"></div>
+      <div id="quickBox" class="hidden">
+        <div class="lbl">Ediciones rápidas</div>
+        <div id="quickJobs" class="quick-jobs"></div>
+      </div>
+      <div id="reuseBox" class="hidden">
+        <div class="lbl">O empieza con un vídeo que ya subiste</div>
+        <div class="recent" id="recent"></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-head"><div><h2>Proyectos</h2><div class="muted small" id="projSub"></div></div></div>
+      <div class="proj-grid" id="projGrid"></div>
+    </section>
+  </div>
+
+  <div id="projectView" class="hidden">
+  <div class="grid hidden" id="editor">
+    <div class="col-main">
+      <section class="card">
+        <div class="card-head">
+          <div class="min0"><h2 id="mName" class="ellipsis"></h2><div class="mono muted small" id="mMeta"></div></div>
+          <label class="check hidden"><input type="checkbox" id="previewTrim" checked> Vista previa del montaje</label>
+        </div>
+        <div class="stage" id="stage">
+          <div class="frame" id="frame">
+            <video id="video" playsinline preload="auto" draggable="false" disablepictureinpicture></video>
+            <canvas class="gl-view hidden" id="glView"></canvas>
+            <div class="scrub hidden" id="scrubView"></div>
+            <div class="crop-layer hidden" id="cropLayer">
+              <div class="crop-rect" id="cropRect">
+                <i data-h="nw"></i><i data-h="ne"></i><i data-h="sw"></i><i data-h="se"></i>
+                <div class="thirds"></div>
+              </div>
+            </div>
+          </div>
+          <div class="stage-msg hidden" id="stageMsg"></div>
+          <div class="mem-badge hidden" id="memBadge"></div>
+          <div class="local-badge hidden" id="localBadge"></div>
+          <button class="bigplay" id="bigPlay" aria-label="Reproducir"><svg viewBox="0 0 24 24" width="28" height="28"><path d="M8 5v14l11-7z" fill="currentColor"/></svg></button>
+        </div>
+        <div class="controls">
+          <button class="icon" id="playBtn" title="Reproducir (Espacio)"><svg viewBox="0 0 24 24" width="16" height="16"><path id="playIcon" d="M8 5v14l11-7z" fill="currentColor"/></svg></button>
+          <button class="icon" id="stepBack" title="Fotograma anterior (←)">‹</button>
+          <button class="icon" id="stepFwd" title="Fotograma siguiente (→)">›</button>
+          <span class="mono time"><span id="tCur">0:00.0</span> / <span id="tDur">0:00.0</span></span>
+          <span class="spacer"></span>
+          <button class="btn sm" id="setIn" title="Recorta el inicio del clip seleccionado al cursor (I)">Marcar inicio</button>
+          <button class="btn sm" id="setOut" title="Recorta el final del clip seleccionado al cursor (O)">Marcar fin</button>
+          <button class="btn sm" id="splitBtn" title="Cortar en el cursor (S)">Cortar</button>
+          <button class="btn sm" id="wholeBtn" title="Volver al vídeo completo">Todo</button>
+          <button class="icon" id="undoBtn" title="Deshacer (Ctrl+Z)" disabled>↶</button>
+          <button class="icon" id="redoBtn" title="Rehacer (Ctrl+Y)" disabled>↷</button>
+        </div>
+        <div class="thumbs hidden" id="thumbs"></div>
+        <div class="wave hidden" id="wave"></div>
+        <div class="tl" id="tl">
+          <div class="tl-head"></div>
+          <div class="tl-ruler" id="tlRuler"></div>
+          <div class="tl-head" title="Vídeo">🎬</div>
+          <div class="tl-lane timeline" id="timeline"><div id="segLayer"></div></div>
+          <div class="tl-head"><button class="lane-mute" id="origMute" title="Silenciar el audio original">🔊</button></div>
+          <div class="tl-lane alane" id="alane"><canvas id="awave"></canvas><div class="alane-msg" id="alaneMsg"></div></div>
+          <div id="mlanes" class="tl-sub"></div>
+          <div class="tl-head"></div>
+          <div class="tl-add" id="mAdd"><label class="tl-addbtn">＋ Añadir audio (música, voz…)<input type="file" id="musFile" accept="audio/*,.mp3,.wav,.m4a,.aac,.flac,.ogg,.oga,.opus,.wma,.aif,.aiff" hidden></label><span class="muted small">o arrástralo aquí</span></div>
+          <div class="tl-playhead" id="playhead"></div>
+        </div>
+        <div class="hint muted small">Clic en un clip para seleccionarlo · <kbd>S</kbd> cortar en el cursor · <kbd>Supr</kbd> borrar el clip seleccionado · clic derecho: velocidad, volumen, fundidos · arrastra los bordes para recortar · arrastra la línea amarilla para el volumen · <kbd>Espacio</kbd> reproducir · <kbd>←</kbd><kbd>→</kbd> fotograma</div>
+      </section>
+
+      <section class="card fold" id="cropCard">
+        <div class="card-head">
+          <div><h3>Encuadre y rotación</h3><div class="muted small">Recorta la imagen, gira o voltea</div></div>
+          <label class="check"><input type="checkbox" id="cropOn"> Recortar</label>
+        </div>
+        <div class="row wrapx">
+          <div class="chips" id="aspectChips"></div>
+          <span class="spacer"></span>
+          <div class="chips">
+            <button class="chip" id="rotL" title="Girar a la izquierda">⟲ 90°</button>
+            <button class="chip" id="rotR" title="Girar a la derecha">⟳ 90°</button>
+            <button class="chip" id="flipH" title="Voltear horizontal">⇋</button>
+            <button class="chip" id="flipV" title="Voltear vertical">⇵</button>
+          </div>
+        </div>
+        <div class="muted small mono" id="cropInfo"></div>
+      </section>
+
+      <section class="card fold" id="colorCard">
+        <div class="card-head">
+          <div><h3>Color</h3><div class="muted small">LUTs y ajustes; se aplican con precisión de 16 bits</div></div>
+          <button class="btn sm ghost" id="gradeReset">Restablecer</button>
+        </div>
+        <div class="color-grid">
+          <div class="color-ctl">
+            <div class="field">
+              <span class="lbl">LUT</span>
+              <div class="row">
+                <select id="lutSel"></select>
+                <label class="btn sm soft" title="Subir .cube">Subir .cube<input type="file" id="lutFile" accept=".cube" hidden></label>
+                <button class="icon hidden" id="lutDel" title="Borrar esta LUT">✕</button>
+              </div>
+            </div>
+            <div class="sliders" id="sliders"></div>
+          </div>
+          <div class="compare-box">
+            <div class="compare" id="compare">
+              <img id="cmpAfter" alt="" draggable="false">
+              <div class="cmp-before" id="cmpBeforeWrap"><img id="cmpBefore" alt="" draggable="false"></div>
+              <div class="cmp-bar" id="cmpBar"><span></span></div>
+              <div class="cmp-tag l">Original</div><div class="cmp-tag r">Resultado</div>
+              <div class="cmp-empty" id="cmpEmpty">Vista previa del fotograma actual</div>
+            </div>
+            <div class="row"><button class="btn sm soft" id="cmpRefresh">Actualizar con el fotograma actual</button><span class="muted small" id="cmpStatus"></span></div>
+            <label class="check" id="liveGradeBox"><input type="checkbox" id="liveGrade" autocomplete="off"> Ver el color en el reproductor (tiempo real)</label>
+          </div>
+        </div>
+      </section>
+
+      <section class="card fold" id="subsCard">
+        <div class="card-head">
+          <div><h3>Subtítulos</h3><div class="muted small">Quémalos en la imagen o añádelos como pista que se puede activar</div></div>
+          <label class="check" id="subLiveBox"><input type="checkbox" id="subLive" checked> Ver en el reproductor</label>
+        </div>
+        <div class="lbl">Pista</div>
+        <div class="row wrapx">
+          <div class="chips" id="subChips"></div>
+          <label class="btn sm soft">Subir .srt / .ass / .vtt<input type="file" id="subFile" accept=".srt,.ass,.ssa,.vtt" hidden></label>
+        </div>
+        <div id="subOpts" class="hidden">
+          <div class="lbl">Cómo añadirlos</div>
+          <div class="chips" id="subMode"><button class="chip" data-sm="burn">Quemar en la imagen</button><button class="chip" data-sm="soft">Pista seleccionable</button></div>
+          <div class="slider-row" id="subSizeRow"><span class="muted small">Tamaño</span><input type="range" id="subSize" min="0.5" max="2.5" step="0.05"><span class="mono" id="subSizeVal"></span></div>
+          <div class="note hidden" id="subNote"></div>
+        </div>
+      </section>
+
+      <section class="card fold" id="audioCard">
+        <div class="card-head">
+          <div><h3>Audio</h3><div class="muted small">Volumen del audio original y tus pistas de música o voz</div></div>
+        </div>
+        <div id="origAudioBox">
+          <div class="lbl">Audio original</div>
+          <div class="row wrapx">
+            <div class="chips" id="audioMode"><button class="chip" data-a="keep">Mantener</button><button class="chip" data-a="mute">Silenciar</button></div>
+            <div class="row hidden" id="atrackBox"><span class="muted small">Pista</span><select id="atrack"></select></div>
+          </div>
+          <div class="slider-row" id="volRow"><span class="muted small">Volumen</span><input type="range" id="volume" min="0" max="3" step="0.05"><span class="mono" id="volVal"></span></div>
+          <div class="muted small">Para una sola parte usa la barra de audio bajo el vídeo: arrastra la línea para subir o bajar, clic derecho para cortar o silenciar un trozo, doble clic para volver al 100%.</div>
+        </div>
+        <div class="note hidden" id="noOrigAudio">Este vídeo no tiene sonido propio; puedes añadirle pistas de audio.</div>
+        <div class="lbl">Tus audios</div>
+        <div class="muted small">Los audios que subes aparecen aquí; con ＋ los pones en la línea de tiempo, en el cursor.</div>
+        <div class="alib" id="musChips"></div>
+      </section>
+    </div>
+
+    <aside class="col-side">
+      <section class="card out" id="outCard">
+        <div class="card-head"><div><h3>Salida</h3><div class="muted small">Formato, resolución y calidad</div></div></div>
+        <div class="lbl">Formato</div>
+        <div class="fmt-grid" id="fmtGrid"></div>
+        <div id="copyNote" class="note hidden">Corta sin recodificar: instantáneo y sin pérdida. El corte cae en el fotograma clave más cercano, así que puede empezar un poco antes. Ignora el color, el encuadre y la velocidad. Si el original es MKV conserva todas las pistas de audio y subtítulos.</div>
+        <div id="videoOpts">
+          <div class="lbl">Resolución</div>
+          <div class="chips" id="resChips"></div>
+          <div class="lbl">Fotogramas por segundo</div>
+          <div class="chips" id="fpsChips"></div>
+          <div id="qualityBlock">
+            <div class="lbl">Tamaño</div>
+            <div class="chips"><button class="chip" data-mode="crf">Calidad</button><button class="chip" data-mode="size">Tamaño objetivo</button></div>
+            <div id="crfBox" class="slider-row">
+              <input type="range" id="crf" step="1">
+              <span class="mono" id="crfVal"></span><span class="muted small" id="crfLbl"></span>
+            </div>
+            <div id="sizeBox" class="row hidden"><input type="number" id="sizeMb" min="1" step="1" class="num"> <span class="muted">MB</span><span class="muted small">codifica en 2 pasadas para clavarlo</span></div>
+            <div class="lbl">Velocidad de codificación</div>
+            <div class="chips" id="presetChips"><button class="chip" data-p="fast">Rápida</button><button class="chip" data-p="medium">Equilibrada</button><button class="chip" data-p="slow">Lenta · mejor</button></div>
+            <div id="encBox">
+              <div class="lbl">Codificador</div>
+              <div class="chips" id="encChips"><button class="chip" data-e="cpu">CPU · máxima calidad</button><button class="chip" data-e="gpu">GPU · mucho más rápido</button></div>
+            </div>
+            <label class="check" id="tenBitBox"><input type="checkbox" id="tenBit"> 10 bits (menos bandas en cielos)</label>
+          </div>
+          <label class="check hidden" id="hdrBox"><input type="checkbox" id="tonemap" checked> Convertir HDR a SDR (colores correctos en cualquier pantalla)</label>
+          <div id="slowBox" class="hidden">
+            <div class="lbl">Cámara lenta</div>
+            <div class="chips" id="slowChips"><button class="chip" data-s="dup">Repetir fotogramas</button><button class="chip" data-s="blend">Mezclar</button><button class="chip" data-s="interp">Interpolar · lento</button></div>
+          </div>
+          <div class="lbl">Fundidos</div>
+          <div class="row wrapx">
+            <label class="mini">Entrada <select id="fadeIn"></select></label>
+            <label class="mini">Salida <select id="fadeOut"></select></label>
+          </div>
+        </div>
+        <div id="audioOpts">
+          <div class="lbl">Calidad del audio</div>
+          <div class="chips" id="abrChips"></div>
+        </div>
+        <div class="lbl">Nombre del archivo</div>
+        <div class="row"><input type="text" id="outName" class="grow"><span class="mono muted" id="outExt"></span></div>
+        <div class="summary">
+          <div><span>Duración final</span><b class="mono" id="sDur">–</b></div>
+          <div><span>Fotograma</span><b class="mono" id="sFrame">–</b></div>
+          <div><span>Tamaño estimado</span><b class="mono" id="sSize">–</b></div>
+        </div>
+        <button class="btn primary big" id="renderBtn">Renderizar</button>
+      </section>
+    </aside>
+  </div>
+
+  <section class="card" id="jobsCard">
+    <div class="card-head"><div><h3>Renders de este proyecto</h3><div class="muted small" id="jobsSub">Puedes cerrar la pestaña: siguen en el servidor</div></div><button class="btn sm ghost" id="clearDone">Limpiar terminados</button></div>
+    <div id="jobs"><div class="muted small empty">Todavía no hay renders.</div></div>
+  </section>
+  </div>
+</main>
+
+<div class="modal hidden" id="libModal">
+  <div class="modal-card">
+    <div class="card-head"><div class="min0"><h3>Explorar servidor</h3><div class="crumbs mono small" id="crumbs"></div></div><button class="icon" id="libClose">✕</button></div>
+    <div class="chips" id="rootChips"></div>
+    <div class="lib-list" id="libList"></div>
+  </div>
+</div>
+
+<div class="modal hidden" id="droneModal">
+  <div class="modal-card drone">
+    <div class="card-head"><div class="min0"><h3>Edición rápida dron</h3><div class="muted small">MP4 H.264 · 720p · 30 fps · CRF 22 (máx. 95 MB) · codificación lenta · LUT Berry · sin sonido</div></div><button class="icon" id="droneClose">✕</button></div>
+    <label class="drone-drop" id="droneDrop"><b>Arrastra aquí tus vídeos</b><span class="muted small">o haz clic para elegirlos · puedes añadir varios</span><input type="file" id="droneFile" accept="video/*,.mkv,.mts,.m2ts,.avi,.mxf,.lrv,.insv" multiple hidden></label>
+    <div class="drone-list" id="droneList"></div>
+    <div class="row end"><span class="muted small grow" id="droneRes">Deja los recortes vacíos para usar el vídeo entero.</span><button class="btn ghost" id="droneCancel">Cancelar</button><button class="btn primary" id="droneGo" disabled>Subir y renderizar</button></div>
+  </div>
+</div>
+
+<div class="modal hidden" id="confirmModal">
+  <div class="modal-card narrow">
+    <p id="confirmText"></p>
+    <div class="row end"><button class="btn ghost" id="confirmNo">Cancelar</button><button class="btn danger" id="confirmYes">Borrar</button></div>
+  </div>
+</div>
+
+<div class="ctxmenu hidden" id="ctxMenu"></div>
+<div class="toasts" id="toasts"></div>
+<script src="app.js"></script>
+</body>
+</html>
