@@ -2,6 +2,8 @@
 
 # Video Tools
 
+**English** · [Español](README.es.md)
+
 **A self-hosted, browser-based video editor powered by FFmpeg.**
 Cut, color-grade, mix audio and export in any format — with instant preview in the browser and full-quality rendering on your own server.
 
@@ -28,7 +30,7 @@ Video Tools is a full video editing suite that runs on a home server and is used
 
 It was built to replace a desktop editor for everyday work — mostly drone footage — without installing anything on the client, and to take advantage of the server's CPU/GPU for rendering while the laptop stays free.
 
-> The user interface is in Spanish.
+> The user interface is in Spanish. A Spanish version of this document is available in [README.es.md](README.es.md).
 
 ## Features
 
