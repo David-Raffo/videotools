@@ -5,7 +5,7 @@
 **English** · [Español](README.es.md)
 
 **A self-hosted, browser-based video editor powered by FFmpeg.**
-Cut, color-grade, mix audio and export in any format — with instant preview in the browser and full-quality rendering on your own server.
+Cut, color-grade, mix audio and export in any format, with instant preview in the browser and full-quality rendering on your own server.
 
 ![Python](https://img.shields.io/badge/Python-3.13-3776AB?logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.141-009688?logo=fastapi&logoColor=white)
@@ -28,7 +28,7 @@ Cut, color-grade, mix audio and export in any format — with instant preview in
 
 Video Tools is a full video editing suite that runs on a home server and is used from any browser. The original files never leave the server: the browser works with a lightweight proxy for a fluid editing experience, and the final export is always rendered from the untouched original with FFmpeg at maximum quality.
 
-It was built to replace a desktop editor for everyday work — mostly drone footage — without installing anything on the client, and to take advantage of the server's CPU/GPU for rendering while the laptop stays free.
+It was built to replace a desktop editor for everyday work, mostly drone footage, without installing anything on the client, and to take advantage of the server's CPU/GPU for rendering while the laptop stays free.
 
 > The user interface is in Spanish. A Spanish version of this document is available in [README.es.md](README.es.md).
 
@@ -36,8 +36,8 @@ It was built to replace a desktop editor for everyday work — mostly drone foot
 
 ### Editing
 - **Multi-track timeline** laid out in output time, with a ruler, thumbnails per clip and a single playhead across all tracks.
-- **Split, trim and ripple delete** — select a clip and press <kbd>Del</kbd>; the rest of the sequence closes the gap. Splitting twice at the same point is rejected instead of creating empty clips.
-- **Speed changes** per clip (0.25× – 16×) with pitch-preserving audio preview and three slow-motion modes on export: frame duplication, blending or motion interpolation.
+- **Split, trim and ripple delete**: select a clip and press <kbd>Del</kbd> and the rest of the sequence closes the gap. Splitting twice at the same point is rejected instead of creating empty clips.
+- **Speed changes** per clip (0.25× to 16×) with pitch-preserving audio preview and three slow-motion modes on export: frame duplication, blending or motion interpolation.
 - **Undo / redo** (200 steps) and automatic project saving.
 
 ### Audio
@@ -58,7 +58,7 @@ It was built to replace a desktop editor for everyday work — mostly drone foot
 - **HDR → SDR tone mapping** (PQ and HLG) with `zscale` + Hable.
 - Resolution and frame-rate conversion, crop with aspect presets, rotation and flips, fade in/out.
 - **Subtitles**: burn-in (SRT, ASS, VTT, PGS, DVD) or embedded as a selectable track.
-- Render queue with live progress, ETA and speed; renders keep running if the tab is closed.
+- Render queue with live progress, ETA and speed. Renders keep running if the tab is closed.
 
 ### Workflow
 - **Resumable chunked uploads** for files up to tens of GB.
@@ -113,21 +113,21 @@ flowchart LR
 |---|---|
 | Backend | Python 3.13, FastAPI, Uvicorn, SQLite, NumPy |
 | Media | FFmpeg 7 (libx264, libx265, SVT-AV1, libvpx-vp9, VAAPI, zscale, lut3d) |
-| Frontend | HTML, CSS and vanilla JavaScript — no framework, no build step |
+| Frontend | HTML, CSS and vanilla JavaScript, no framework, no build step |
 | Browser APIs | Web Audio, WebGL2, WebCodecs, Canvas |
 | Deployment | Docker / Docker Compose behind a TLS reverse proxy |
 
 ## How it works
 
-**Proxy-based editing.** When a video is uploaded, a background worker creates a lightweight 720p H.264 proxy (video only, short GOP for fast seeking), one MP3 per audio track, a waveform, a thumbnail strip and a scrubbing sprite. The editor only ever touches these files; the original stays untouched until export.
+**Proxy-based editing.** When a video is uploaded, a background worker creates a lightweight 720p H.264 proxy (video only, short GOP for fast seeking), one MP3 per audio track, a waveform, a thumbnail strip and a scrubbing sprite. The editor only ever touches these files, and the original stays untouched until export.
 
 **Audio as the master clock.** Instead of relying on the `<video>` element's audio, each audio track is decoded into an `AudioBuffer` and scheduled with the Web Audio API following the edit list, including volume automation and fades. Speed changes are time-stretched with a WSOLA implementation so pitch is preserved. The video element follows the audio clock and is corrected only when drift exceeds 120 ms, which keeps playback smooth across cuts.
 
-**Instant preview during upload.** While a file is uploading, the browser plays it directly through an object URL. `mp4box.js` reads the container index and `WebCodecs` decodes the audio in the background, so waveform, thumbnails and sound are available within seconds — even for multi-GB files — before the server has received the whole file.
+**Instant preview during upload.** While a file is uploading, the browser plays it directly through an object URL. `mp4box.js` reads the container index and `WebCodecs` decodes the audio in the background, so waveform, thumbnails and sound are available within seconds, even for multi-GB files, before the server has received the whole file.
 
 **Color pipeline.** Every grading adjustment and the selected LUT (blended by intensity) are evaluated with NumPy on a 33×33×33 identity grid and written as a single `.cube` file. FFmpeg applies it once with `lut3d` in `gbrp16le`, so stacking adjustments costs nothing extra and never bands. The same grid is sent to the browser as a float texture and applied in a WebGL2 fragment shader for the real-time preview.
 
-**Render graph.** Each export is compiled into a single `filter_complex`: per-segment trim, tone mapping, crop, rotation, scaling, LUT, sharpening, subtitles, speed and frame-rate conversion, then concatenation; audio segments are time-stretched with `atempo`, volume regions are evaluated per frame, and music clips are delayed, faded and mixed with `amix`.
+**Render graph.** Each export is compiled into a single `filter_complex`: per-segment trim, tone mapping, crop, rotation, scaling, LUT, sharpening, subtitles, speed and frame-rate conversion, then concatenation. Audio segments are time-stretched with `atempo`, volume regions are evaluated per frame, and music clips are delayed, faded and mixed with `amix`.
 
 ## Getting started
 

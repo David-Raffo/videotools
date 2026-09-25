@@ -5,7 +5,7 @@
 [English](README.md) · **Español**
 
 **Editor de vídeo autoalojado que funciona en el navegador, impulsado por FFmpeg.**
-Corta, corrige el color, mezcla audio y exporta en cualquier formato — con vista previa instantánea en el navegador y renderizado a máxima calidad en tu propio servidor.
+Corta, corrige el color, mezcla audio y exporta en cualquier formato, con vista previa instantánea en el navegador y renderizado a máxima calidad en tu propio servidor.
 
 ![Python](https://img.shields.io/badge/Python-3.13-3776AB?logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.141-009688?logo=fastapi&logoColor=white)
@@ -28,14 +28,14 @@ Corta, corrige el color, mezcla audio y exporta en cualquier formato — con vis
 
 Video Tools es una suite completa de edición de vídeo que se ejecuta en un servidor doméstico y se usa desde cualquier navegador. Los archivos originales nunca salen del servidor: el navegador trabaja con un proxy ligero para que la edición sea fluida, y la exportación final siempre se renderiza a partir del original intacto con FFmpeg a máxima calidad.
 
-Nació para sustituir a un editor de escritorio en el trabajo diario — sobre todo con metraje de dron — sin instalar nada en el cliente, y para aprovechar la CPU/GPU del servidor al renderizar mientras el portátil queda libre.
+Nació para sustituir a un editor de escritorio en el trabajo diario, sobre todo con metraje de dron, sin instalar nada en el cliente, y para aprovechar la CPU/GPU del servidor al renderizar mientras el portátil queda libre.
 
 ## Funcionalidades
 
 ### Edición
 - **Línea de tiempo multipista** organizada en tiempo de salida, con regla, miniaturas por clip y un único cabezal de reproducción para todas las pistas.
-- **Cortar, recortar y borrado con cierre de huecos (ripple delete)** — selecciona un clip y pulsa <kbd>Supr</kbd>; el resto de la secuencia se desplaza para cerrar el hueco. Cortar dos veces en el mismo punto se rechaza en lugar de crear clips vacíos.
-- **Cambios de velocidad** por clip (0,25× – 16×) con vista previa de audio que conserva el tono y tres modos de cámara lenta al exportar: duplicación de fotogramas, fundido o interpolación de movimiento.
+- **Cortar, recortar y borrado con cierre de huecos (ripple delete)**: selecciona un clip y pulsa <kbd>Supr</kbd> y el resto de la secuencia se desplaza para cerrar el hueco. Cortar dos veces en el mismo punto se rechaza en lugar de crear clips vacíos.
+- **Cambios de velocidad** por clip (de 0,25× a 16×) con vista previa de audio que conserva el tono y tres modos de cámara lenta al exportar: duplicación de fotogramas, fundido o interpolación de movimiento.
 - **Deshacer / rehacer** (200 pasos) y guardado automático del proyecto.
 
 ### Audio
@@ -56,7 +56,7 @@ Nació para sustituir a un editor de escritorio en el trabajo diario — sobre t
 - **Mapeo de tonos HDR → SDR** (PQ y HLG) con `zscale` + Hable.
 - Conversión de resolución y fotogramas por segundo, recorte con proporciones predefinidas, rotación, volteo y fundidos de entrada/salida.
 - **Subtítulos**: incrustados en la imagen (SRT, ASS, VTT, PGS, DVD) o como pista seleccionable.
-- Cola de renderizado con progreso en directo, tiempo restante y velocidad; los renderizados continúan aunque se cierre la pestaña.
+- Cola de renderizado con progreso en directo, tiempo restante y velocidad. Los renderizados continúan aunque se cierre la pestaña.
 
 ### Flujo de trabajo
 - **Subidas por fragmentos reanudables** para archivos de decenas de GB.
@@ -111,21 +111,21 @@ flowchart LR
 |---|---|
 | Backend | Python 3.13, FastAPI, Uvicorn, SQLite, NumPy |
 | Multimedia | FFmpeg 7 (libx264, libx265, SVT-AV1, libvpx-vp9, VAAPI, zscale, lut3d) |
-| Frontend | HTML, CSS y JavaScript puro — sin framework ni paso de compilación |
+| Frontend | HTML, CSS y JavaScript puro, sin framework ni paso de compilación |
 | APIs del navegador | Web Audio, WebGL2, WebCodecs, Canvas |
 | Despliegue | Docker / Docker Compose detrás de un proxy inverso con TLS |
 
 ## Cómo funciona
 
-**Edición basada en proxies.** Al subir un vídeo, un worker en segundo plano genera un proxy ligero H.264 a 720p (solo vídeo, GOP corto para buscar rápido), un MP3 por cada pista de audio, una forma de onda, una tira de miniaturas y un sprite para el scrubbing. El editor solo trabaja con estos archivos; el original permanece intacto hasta la exportación.
+**Edición basada en proxies.** Al subir un vídeo, un worker en segundo plano genera un proxy ligero H.264 a 720p (solo vídeo, GOP corto para buscar rápido), un MP3 por cada pista de audio, una forma de onda, una tira de miniaturas y un sprite para el scrubbing. El editor solo trabaja con estos archivos y el original permanece intacto hasta la exportación.
 
 **El audio como reloj maestro.** En lugar de depender del audio del elemento `<video>`, cada pista de audio se decodifica en un `AudioBuffer` y se programa con la Web Audio API siguiendo la lista de edición, incluida la automatización de volumen y los fundidos. Los cambios de velocidad se estiran en el tiempo con una implementación WSOLA para conservar el tono. El elemento de vídeo sigue al reloj de audio y solo se corrige cuando la desviación supera los 120 ms, lo que mantiene la reproducción fluida entre cortes.
 
-**Vista previa instantánea durante la subida.** Mientras un archivo se sube, el navegador lo reproduce directamente mediante una URL de objeto. `mp4box.js` lee el índice del contenedor y `WebCodecs` decodifica el audio en segundo plano, de modo que la forma de onda, las miniaturas y el sonido están disponibles en segundos — incluso con archivos de varios GB — antes de que el servidor haya recibido el archivo completo.
+**Vista previa instantánea durante la subida.** Mientras un archivo se sube, el navegador lo reproduce directamente mediante una URL de objeto. `mp4box.js` lee el índice del contenedor y `WebCodecs` decodifica el audio en segundo plano, de modo que la forma de onda, las miniaturas y el sonido están disponibles en segundos, incluso con archivos de varios GB, antes de que el servidor haya recibido el archivo completo.
 
 **Pipeline de color.** Cada ajuste de corrección y el LUT seleccionado (mezclado según su intensidad) se evalúan con NumPy sobre una rejilla identidad de 33×33×33 y se escriben como un único archivo `.cube`. FFmpeg lo aplica una sola vez con `lut3d` en `gbrp16le`, así que acumular ajustes no tiene coste adicional y nunca produce bandas. La misma rejilla se envía al navegador como textura de punto flotante y se aplica en un fragment shader de WebGL2 para la vista previa en tiempo real.
 
-**Grafo de renderizado.** Cada exportación se compila en un único `filter_complex`: recorte por segmento, mapeo de tonos, recorte de imagen, rotación, escalado, LUT, enfoque, subtítulos, velocidad y conversión de fotogramas, y después concatenación; los segmentos de audio se estiran con `atempo`, las regiones de volumen se evalúan por fotograma y los clips de música se retrasan, se funden y se mezclan con `amix`.
+**Grafo de renderizado.** Cada exportación se compila en un único `filter_complex`: recorte por segmento, mapeo de tonos, recorte de imagen, rotación, escalado, LUT, enfoque, subtítulos, velocidad y conversión de fotogramas, y después concatenación. Los segmentos de audio se estiran con `atempo`, las regiones de volumen se evalúan por fotograma y los clips de música se retrasan, se funden y se mezclan con `amix`.
 
 ## Primeros pasos
 
